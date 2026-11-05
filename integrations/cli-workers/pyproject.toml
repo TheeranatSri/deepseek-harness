@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dsh-cli-workers"
+version = "0.1.0"
+description = "Resumable Claude Code and Codex workers for DeepSeek Harness via MCP"
+requires-python = ">=3.11"
+dependencies = ["mcp>=1.30,<2", "anyio>=4.5,<5"]
+
+[project.optional-dependencies]
+test = ["pytest>=8", "pytest-asyncio>=0.24"]
+
+[project.scripts]
+dsh-cli-workers = "dsh_cli_workers.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
