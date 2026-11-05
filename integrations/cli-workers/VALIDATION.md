@@ -3,8 +3,8 @@
 ## Executed
 
 ```text
-DSH_TEST_BIN=/absolute/path/to/dsh python -m pytest -q
-31 passed in 9.84s
+DSH_TEST_RUNTIME=/absolute/path/to/runtime DSH_TEST_BIN=/absolute/path/to/dsh python -m pytest -q
+34 passed in 13.16s
 ```
 
 Runtime versions inspected directly:
@@ -33,6 +33,10 @@ The coordinator model endpoint is a loopback-only scripted DeepSeek Messages sta
 
 Additional tests cover official MCP client discovery and reconnect, cleanup on disconnect with a running worker, FIFO turns, session history across server restarts, distinct concurrent workers, optional capacity/deadline settings, shared-context snapshots and revision conflicts, cancellation of queued/running jobs and descendants, failed dependent turns, malformed/partial results, answer phase precedence, large output pagination, reset, exclusive state ownership, and interrupted-task recovery without automatic replay.
 
+The launcher regression executes the generated `launch.sh` with failing `npx` and `dsh` commands ahead of the ordinary PATH. It verifies the workspace, overlay path, quoted directory names, and forwarded Web arguments using the directly selected Node entry point. The regression fails against the former launcher with exit 127 and `sh: dsh: command not found`. A separate test exercises the actual published Web CLI help through the generated launcher; a missing runtime returns an actionable installer diagnostic.
+
+A fresh `bash install.sh` completed successfully, installing bridge 0.1.1 and the isolated npm runtime. Its generated launcher returned the real Web help successfully. A second smoke started that launcher with `--no-open --port 0` and a temporary `DSH_HOME`, followed its tokenized launch URL, obtained the session cookie, and received HTTP 200 with an HTML response. The process shut down cleanly with exit 0. No model calls were made during either smoke.
+
 ## Not verified with a real account
 
 - No paid model API calls were made to OpenAI, Anthropic, or DeepSeek.
@@ -43,13 +47,13 @@ Additional tests cover official MCP client discovery and reconnect, cleanup on d
 
 ## Reproduce the Harness integration
 
-Install the package and test dependencies, install `@deepseek-ai/dsh@0.2.2-rc.1` in an isolated directory, then set `DSH_TEST_BIN` to that installation's `dsh` executable:
+Install the package and test dependencies, install `@deepseek-ai/dsh@0.2.2-rc.1` in an isolated directory, then set `DSH_TEST_RUNTIME` to that directory and `DSH_TEST_BIN` to its `dsh` executable:
 
 ```bash
-DSH_TEST_BIN=/absolute/path/to/node_modules/.bin/dsh .venv/bin/python -m pytest -q
+DSH_TEST_RUNTIME=/absolute/path/to/runtime DSH_TEST_BIN=/absolute/path/to/runtime/node_modules/.bin/dsh .venv/bin/python -m pytest -q
 ```
 
-Without that environment variable the optional actual-Harness test is skipped; all remaining tests use local fixtures and need no model credentials.
+`DSH_TEST_BIN` enables the optional actual-Harness model/tool test. `DSH_TEST_RUNTIME` enables the actual generated-launcher Web help test. Other tests use local fixtures and need no model credentials.
 
 ## Authenticated smoke on your machine
 

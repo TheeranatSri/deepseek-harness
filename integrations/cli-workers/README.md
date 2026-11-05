@@ -44,15 +44,19 @@ bash install.sh /absolute/path/to/your/project workspace
 
 `workspace` ส่ง `acceptEdits` ให้ Claude และ `workspace-write` พร้อม `approval_policy="never"` ให้ Codex คำสั่งที่ native policy ไม่อนุญาตจะถูกปฏิเสธ ไม่เปิดหน้าถามค้างไว้ โหมดนี้ไม่ได้เพิ่ม OS sandbox ให้ Claude
 
-Installer สร้าง virtual environment, ติดตั้ง Python package ด้วย dependency versions ใน `requirements.lock`, และสร้าง `local/workers.toml`, `local/workers.cordis.yml`, `local/launch.sh` โดยไม่คัดลอก token ลงไฟล์ รองรับ CLI paths ที่มีช่องว่าง
+Installer สร้าง virtual environment, ติดตั้ง Python package ด้วย dependency versions ใน `requirements.lock`, และสร้าง `local/workers.toml`, `local/workers.cordis.yml`, `local/launch.sh` โดยไม่คัดลอก token ลงไฟล์ รองรับ CLI paths ที่มีช่องว่าง นอกจากนี้ยังติดตั้ง Harness ลง `local/runtime` ด้วย npm ที่ปิด workspace resolution
 
-Launcher ใช้ `@deepseek-ai/dsh@0.2.2-rc.1` ให้ตรงกับ config ที่ตรวจไว้ และเปิด Web UI ที่พอร์ตมาตรฐาน 3080 ถ้ามี Harness ใช้อยู่แล้ว ให้ใช้ overlay ที่สร้างไว้กับคำสั่งเปิด Harness ของคุณ:
+Launcher เรียก `local/runtime/node_modules/@deepseek-ai/dsh/lib/bin.js` ผ่าน Node โดยตรง ไม่ต้องมีคำสั่ง `dsh` ใน PATH และไม่พึ่งการเลือก executable ของ `npx` ภายใน checkout ตัว runtime ใช้ `@deepseek-ai/dsh@0.2.2-rc.1` และเปิด Web UI ที่พอร์ตมาตรฐาน 3080 ถ้ามี Harness ใช้อยู่แล้ว ให้ใช้ overlay ที่สร้างไว้กับคำสั่งเปิด Harness ของคุณ:
 
 ```bash
 dsh web --patch /absolute/path/to/dsh-cli-workers/local/workers.cordis.yml
 ```
 
 ตั้งค่า model/credentials ของ coordinator ใน Harness ตามปกติ ส่วน credentials ของ worker ใช้ native login หรือ environment ของแต่ละ CLI; โควตาของทั้งสามส่วนไม่ได้รวมเป็นบัญชีเดียว
+
+ถ้า browser ไม่เปิดเอง ให้เปิด launch URL ที่แสดงใน Terminal เพื่อรับ session cookie การเปิด URL พอร์ตเปล่าโดยยังไม่มี cookie จะถูกปฏิเสธ
+
+ถ้าเคยติดตั้งเวอร์ชันเดิมแล้วพบ `sh: dsh: command not found` ให้ pull โค้ดล่าสุด แล้วรัน `install.sh` ด้วย workspace และ policy เดิมอีกครั้ง Installer จะอัปเดต Python package ติดตั้ง runtime และสร้าง `local/launch.sh` ใหม่ State และ native session เดิมยังอยู่
 
 ## ใช้งานจาก Harness
 

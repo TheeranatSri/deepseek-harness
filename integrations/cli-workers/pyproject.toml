@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dsh-cli-workers"
-version = "0.1.0"
+version = "0.1.1"
 description = "Resumable Claude Code and Codex workers for DeepSeek Harness via MCP"
 requires-python = ">=3.11"
 dependencies = ["mcp>=1.30,<2", "anyio>=4.5,<5"]

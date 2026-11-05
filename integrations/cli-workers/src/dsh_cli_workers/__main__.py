@@ -12,6 +12,9 @@ import sys
 from .config import load_config
 
 
+HARNESS_RUNTIME_VERSION = "0.2.2-rc.1"
+
+
 def configure(workspace: Path, output_dir: Path, policy: str) -> dict:
     workspace = workspace.expanduser().resolve(strict=True)
     if not workspace.is_dir():
@@ -41,13 +44,25 @@ def configure(workspace: Path, output_dir: Path, policy: str) -> dict:
         "          Object.fromEntries(['PATH', 'HOME', 'CODEX_HOME', 'CLAUDE_CONFIG_DIR', 'ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_BASE_URL', 'OPENAI_API_KEY', 'CODEX_API_KEY', 'OPENAI_BASE_URL', 'HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY'].filter(k => process.env[k] !== undefined).map(k => [k, process.env[k]]))",
         "",
     ]), encoding="utf-8")
+    runtime = output_dir / "runtime"
+    runtime.mkdir(exist_ok=True)
+    (runtime / "package.json").write_text(json.dumps({
+        "name": "dsh-cli-workers-runtime", "version": "0.0.0", "private": True,
+        "type": "module", "engines": {"node": ">=24.9"},
+        "dependencies": {"@deepseek-ai/dsh": HARNESS_RUNTIME_VERSION},
+    }, indent=2) + "\n", encoding="utf-8")
+    entrypoint = runtime / "node_modules" / "@deepseek-ai" / "dsh" / "lib" / "bin.js"
     launcher = output_dir / "launch.sh"
     launcher.write_text("\n".join([
-        "#!/usr/bin/env bash", "set -euo pipefail", f"cd -- {shlex.quote(str(workspace))}",
-        f"exec npx @deepseek-ai/dsh@0.2.2-rc.1 web --patch {shlex.quote(str(overlay))}", "",
+        "#!/usr/bin/env bash", "set -euo pipefail",
+        f"task_entry={shlex.quote(str(entrypoint))}",
+        'if [[ ! -f "$task_entry" ]]; then',
+        "  printf '%s\\n' 'Harness runtime is missing. Run install.sh again to install it.' >&2",
+        "  exit 1", "fi", f"cd -- {shlex.quote(str(workspace))}",
+        f'exec node "$task_entry" web --patch {shlex.quote(str(overlay))} "$@"', "",
     ]), encoding="utf-8")
     launcher.chmod(0o700)
-    return {"config": str(config), "overlay": str(overlay), "launch": str(launcher), "permission_policy": policy}
+    return {"config": str(config), "overlay": str(overlay), "launch": str(launcher), "runtime": str(runtime), "permission_policy": policy}
 
 
 def doctor(config_path: Path) -> list[dict]:
